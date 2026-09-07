@@ -1,0 +1,17 @@
+<div id="subtask-{{ subtask.pk }}" class="flex items-center justify-between px-4 py-2">
+    <label class="flex items-center gap-2">
+        <input type="checkbox"
+               {% if subtask.is_completed %}checked{% endif %}
+               hx-post="{% url 'tasks:subtask_toggle' pk=subtask.pk %}"
+               hx-target="#subtask-{{ subtask.pk }}"
+               hx-swap="outerHTML"
+               class="rounded border-gray-300">
+        <span class="{% if subtask.is_completed %}line-through text-gray-400{% endif %}">{{ subtask.title }}</span>
+    </label>
+    <button hx-post="{% url 'tasks:subtask_delete' pk=subtask.pk %}"
+            hx-target="#subtask-{{ subtask.pk }}"
+            hx-swap="outerHTML"
+            class="text-xs text-red-500 hover:underline">
+        Delete
+    </button>
+</div>

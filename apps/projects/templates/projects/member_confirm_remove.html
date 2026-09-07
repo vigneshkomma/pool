@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Remove Member{% endblock %}
+{% block content %}
+    <div class="max-w-sm mx-auto bg-white border border-gray-200 rounded-lg p-6 text-center">
+        <h1 class="text-lg font-semibold mb-4">Remove {{ member.user }} from {{ project.name }}?</h1>
+        <form method="post" class="mb-3">
+            {% csrf_token %}
+            <button type="submit" class="w-full bg-red-600 text-white py-2 rounded-md hover:bg-red-700">Confirm Remove</button>
+        </form>
+        <a href="{% url 'projects:detail' pk=project.pk %}" class="text-sm text-gray-500 hover:underline">Cancel</a>
+    </div>
+{% endblock %}

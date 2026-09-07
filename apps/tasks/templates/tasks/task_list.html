@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Tasks — {{ project.name }}{% endblock %}
+{% block content %}
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-semibold">Tasks — {{ project.name }}</h1>
+        <div class="flex gap-3">
+            <a href="{% url 'tasks:create' project_pk=project.pk %}" class="bg-gray-900 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700">+ New Task</a>
+            <a href="{% url 'projects:detail' pk=project.pk %}" class="text-sm text-gray-500 self-center hover:underline">Back to Project</a>
+        </div>
+    </div>
+
+    {% if tasks %}
+        <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                    <tr>
+                        <th class="text-left px-4 py-2">Title</th>
+                        <th class="text-left px-4 py-2">Status</th>
+                        <th class="text-left px-4 py-2">Priority</th>
+                        <th class="text-left px-4 py-2">Assignee</th>
+                        <th class="text-left px-4 py-2">Due</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for task in tasks %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3">
+                                <a href="{% url 'tasks:detail' project_pk=project.pk pk=task.pk %}" class="text-blue-600 hover:underline">{{ task.title }}</a>
+                            </td>
+                            <td class="px-4 py-3">{{ task.get_status_display }}</td>
+                            <td class="px-4 py-3">{{ task.get_priority_display }}</td>
+                            <td class="px-4 py-3">{{ task.assignee|default:"Unassigned" }}</td>
+                            <td class="px-4 py-3">{{ task.due_date|default:"—" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-gray-500">No tasks yet.</p>
+    {% endif %}
+{% endblock %}

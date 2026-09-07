@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+    <div class="text-center py-16">
+        <h1 class="text-3xl font-semibold mb-3">Welcome to Carry</h1>
+        {% if user.is_authenticated %}
+            <p class="text-gray-600">
+                Hi {{ user.username }} —
+                <a href="{% url 'projects:list' %}" class="text-blue-600 hover:underline">go to your projects</a>.
+            </p>
+        {% else %}
+            <p class="text-gray-600">
+                <a href="{% url 'accounts:login' %}" class="text-blue-600 hover:underline">Log in</a>
+                or
+                <a href="{% url 'accounts:signup' %}" class="text-blue-600 hover:underline">sign up</a>
+                to get started.
+            </p>
+        {% endif %}
+    </div>
+{% endblock %}

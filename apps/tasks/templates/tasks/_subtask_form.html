@@ -1,0 +1,5 @@
+<form hx-post="{% url 'tasks:subtask_create' task_pk=task.pk %}" hx-target="#subtask-list" hx-swap="beforeend" class="flex gap-2 px-4 py-3 bg-white border border-gray-200 rounded-lg">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="bg-gray-900 text-white px-3 py-1.5 rounded-md text-sm hover:bg-gray-700">Add</button>
+</form>

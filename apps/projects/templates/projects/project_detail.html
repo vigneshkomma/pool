@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }}{% endblock %}
+{% block content %}
+    <div class="mb-6">
+        <h1 class="text-2xl font-semibold">{{ project.name }}</h1>
+        <p class="text-gray-600 mt-1">{{ project.description }}</p>
+        <div class="flex gap-4 mt-3 text-sm text-gray-500">
+            <span>Status: {{ project.get_status_display }}</span>
+            <span>Owner: {{ project.owner }}</span>
+        </div>
+    </div>
+
+    {% if project.owner == user %}
+        <div class="flex gap-3 mb-6">
+            <a href="{% url 'projects:update' pk=project.pk %}" class="text-sm text-blue-600 hover:underline">Edit Project</a>
+            <a href="{% url 'projects:member_add' project_pk=project.pk %}" class="text-sm text-blue-600 hover:underline">Add Member</a>
+        </div>
+    {% endif %}
+
+    <h2 class="text-lg font-medium mb-2">Members</h2>
+    <div class="bg-white border border-gray-200 rounded-lg divide-y divide-gray-100 mb-6">
+        {% for membership in project.membership.all %}
+            <div class="flex items-center justify-between px-4 py-3">
+                <span>{{ membership.user }} <span class="text-gray-400 text-sm">— {{ membership.get_role_display }}</span></span>
+                {% if project.owner == user and membership.role != 'OWNER' %}
+                    <form method="post" action="{% url 'projects:member_remove' project_pk=project.pk member_pk=membership.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="text-red-600 text-sm hover:underline">Remove</button>
+                    </form>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <h2 class="text-lg font-medium mb-2">Labels</h2>
+    <div class="flex flex-wrap gap-2 mb-6">
+        {% for label in project.labels.all %}
+            <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">{{ label.name }}</span>
+        {% endfor %}
+    </div>
+
+    <a href="{% url 'tasks:list' project_pk=project.pk %}" class="inline-block bg-gray-900 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700">View Tasks</a>
+{% endblock %}
