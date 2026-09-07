@@ -1,4 +1,4 @@
-# Carry
+# Pool
 
 A lightweight, self-hosted project and task management app for individuals and small teams — built with server-rendered Django, HTMX, and Alpine.js.
 
@@ -98,4 +98,4 @@ The Django admin has inline editing set up for quick manual test-data creation:
 
 ## License
 
-Add your license here (e.g. MIT).
+GNU Public License
