@@ -15,12 +15,12 @@ Carry covers the essentials: projects, tasks, subtasks, comments, labels, and te
 
 ## Tech Stack
 
-| Layer      | Choice                          |
-|------------|----------------------------------|
-| Backend    | Django (server-rendered, no DRF) |
+| Layer      | Choice                                |
+|------------|---------------------------------------|
+| Backend    | Django (server-rendered, no DRF)      |
 | Frontend   | HTMX + Alpine.js + Tailwind CSS (CDN) |
-| Database   | PostgreSQL                      |
-| Auth       | Custom `User` model (`accounts` app) |
+| Database   | Sqlite3                               |
+| Auth       | Custom `User` model (`accounts` app)  |
 
 ## Project Structure
 
