@@ -2,7 +2,7 @@
 
 A lightweight, self-hosted project and task management app for individuals and small teams — built with server-rendered Django, HTMX, and Alpine.js.
 
-Carry covers the essentials: projects, tasks, subtasks, comments, labels, and team membership with roles — without the overhead of a SPA or a separate API layer.
+Pool covers the essentials: projects, tasks, subtasks, comments, labels, and team membership with roles — without the overhead of a SPA or a separate API layer.
 
 ## Features
 
