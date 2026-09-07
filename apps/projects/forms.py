@@ -40,10 +40,10 @@ class ProjectMemberForm(forms.ModelForm):
             raise forms.ValidationError('This user is already a member of the project. ')
         return user
 
-    class ProjectLabelForm(forms.ModelForm):
-        class Meta:
-            model = ProjectLabel
-            fields = ('name',)
+class ProjectLabelForm(forms.ModelForm):
+    class Meta:
+        model = ProjectLabel
+        fields = ('name',)
 
 
 
