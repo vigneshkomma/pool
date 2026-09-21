@@ -1,4 +1,4 @@
-# Carry
+# Pool
 
 A project and task management web app for individuals and small teams. Built with Django and HTMX, fully server-rendered.
 
