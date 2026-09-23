@@ -71,6 +71,28 @@ python manage.py runserver
 
 Open http://127.0.0.1:8000/ in your browser. The admin site is at `/admin/`.
 
+## Domain and deployment
+
+The app chooses its hostname from environment variables, so local development and
+deployment use the same codebase:
+
+```bash
+# Local development (the default)
+DJANGO_DEBUG=true python manage.py runserver
+
+# Production server
+DJANGO_DEBUG=false \\
+DJANGO_ALLOWED_HOSTS=poolapp.duckdns.org \\
+DJANGO_CSRF_TRUSTED_ORIGINS=https://poolapp.duckdns.org \\
+gunicorn pool.wsgi:application
+```
+
+With `DJANGO_DEBUG=true`, Django permits only `localhost`, `127.0.0.1`, and
+`[::1]`. With `DJANGO_DEBUG=false`, it permits `poolapp.duckdns.org` and trusts
+its HTTPS origin for form submissions. Add comma-separated values to the two
+host/origin variables if you later add a staging hostname or access the server
+by IP.
+
 ## Key Design Decisions
 
 - **Custom User model** in `accounts`, set up before the first migration.

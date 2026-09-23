@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -22,10 +23,30 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-tqx*!(z8qp)oh!1&=j#=gbiy$ux2wv$&9jmloaj=@@0rmg&9b#'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Set DJANGO_DEBUG=false on the server. Local development remains the default.
+DEBUG = os.environ.get('DJANGO_DEBUG', 'true').lower() in ('1', 'true', 'yes', 'on')
 
-ALLOWED_HOSTS = []
+# A comma-separated override is useful for staging or an additional server IP.
+LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]']
+DEPLOYED_HOSTS = ['poolapp.duckdns.org']
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get(
+        'DJANGO_ALLOWED_HOSTS',
+        ','.join(LOCAL_HOSTS if DEBUG else DEPLOYED_HOSTS),
+    ).split(',')
+    if host.strip()
+]
+
+# Required for Django's CSRF protection when the HTTPS domain posts forms.
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        'DJANGO_CSRF_TRUSTED_ORIGINS',
+        '' if DEBUG else 'https://poolapp.duckdns.org',
+    ).split(',')
+    if origin.strip()
+]
 
 
 # Application definition
