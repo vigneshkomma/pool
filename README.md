@@ -93,6 +93,29 @@ its HTTPS origin for form submissions. Add comma-separated values to the two
 host/origin variables if you later add a staging hostname or access the server
 by IP.
 
+### Docker
+
+Build the production image from the project root:
+
+```bash
+docker build -t poolapp .
+```
+
+Run it locally on port 8000 (the named volume preserves the SQLite database):
+
+```bash
+docker run --rm -p 8000:8000 \
+  --env DJANGO_DEBUG=true \
+  --env DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1 \
+  --volume poolapp-data:/app/data \
+  poolapp
+```
+
+For the server, provide a new `DJANGO_SECRET_KEY` value and mount the same data
+directory if you continue using SQLite. The Dockerfile defaults to
+`poolapp.duckdns.org` with HTTPS CSRF protection and listens on port 8000; have
+your reverse proxy forward the domain to that port.
+
 ## Key Design Decisions
 
 - **Custom User model** in `accounts`, set up before the first migration.

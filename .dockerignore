@@ -1,0 +1,10 @@
+.git
+.idea
+.venv
+.agents
+.codex
+__pycache__
+*.py[cod]
+*.sqlite3
+staticfiles
+.env
