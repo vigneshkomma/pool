@@ -4,41 +4,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Carry{% endblock %}</title>
+    <title>{% block title %}Pool{% endblock %} · Pool</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="{% static 'vendor/htmx.min.js' %}" defer></script>
     <script src="{% static 'vendor/cdn.min.js' %}" defer></script>
+    <style type="text/tailwindcss">
+        @layer base {
+            body { @apply bg-[#f8fafd] text-slate-800 antialiased; }
+            input:not([type="checkbox"]), select, textarea { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100; }
+            input[type="checkbox"] { @apply h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500; }
+            select { @apply pr-8; }
+        }
+        @layer components {
+            .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-full bg-[#0b57d0] px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#0a4cb5] hover:shadow-md focus:outline-none focus:ring-4 focus:ring-blue-200; }
+            .btn-secondary { @apply inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-[#0b57d0] shadow-sm transition hover:bg-blue-50; }
+            .card { @apply rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(60,64,67,.08),0_1px_3px_1px_rgba(60,64,67,.04)]; }
+            .page-title { @apply text-2xl font-normal tracking-tight text-slate-800 sm:text-3xl; }
+            .eyebrow { @apply text-xs font-semibold uppercase tracking-[.12em] text-slate-500; }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
 </head>
-<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="bg-gray-50 text-gray-900 min-h-screen">
-
-    <nav class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <a href="{% url 'home:home_page' %}" class="font-semibold text-lg">Carry</a>
-        <div class="flex items-center gap-4 text-sm">
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' class="min-h-screen">
+    <nav class="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div class="mx-auto flex h-16 max-w-7xl items-center gap-5 px-4 sm:px-6">
+            <a href="{% url 'home:home_page' %}" class="flex shrink-0 items-center gap-2.5" aria-label="Pool home"><span class="grid h-9 w-9 place-items-center rounded-xl bg-[#0b57d0] text-lg font-bold text-white shadow-sm">P</span><span class="text-xl font-medium tracking-tight text-slate-700">pool</span></a>
             {% if user.is_authenticated %}
-                <a href="{% url 'projects:list' %}" class="text-gray-600 hover:text-gray-900">Projects</a>
-                <a href="{% url 'accounts:profile' %}" class="text-gray-600 hover:text-gray-900">Profile</a>
-                <form method="post" action="{% url 'accounts:logout' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="text-gray-600 hover:text-gray-900">Logout</button>
-                </form>
+                <div class="hidden max-w-sm flex-1 md:block"><div class="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-400"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6"></circle><path d="m20 20-4-4"></path></svg>Search your workspace</div></div>
+                <div class="ml-auto flex items-center gap-1"><a href="{% url 'projects:list' %}" class="hidden rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-blue-50 hover:text-[#0b57d0] sm:block">Projects</a><a href="{% url 'accounts:profile' %}" class="grid h-9 w-9 place-items-center rounded-full bg-[#e8f0fe] text-sm font-semibold text-[#0b57d0] transition hover:bg-[#d7e3fc]" title="Profile">{{ user.username|slice:':1'|upper }}</a><form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="rounded-full px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800">Sign out</button></form></div>
             {% else %}
-                <a href="{% url 'accounts:login' %}" class="text-gray-600 hover:text-gray-900">Login</a>
-                <a href="{% url 'accounts:signup' %}" class="bg-gray-900 text-white px-3 py-1.5 rounded-md hover:bg-gray-700">Sign up</a>
+                <div class="ml-auto flex items-center gap-2"><a href="{% url 'accounts:login' %}" class="btn-secondary">Sign in</a><a href="{% url 'accounts:signup' %}" class="btn-primary">Get started</a></div>
             {% endif %}
         </div>
     </nav>
-
-    {% if messages %}
-        <div class="max-w-3xl mx-auto mt-4 px-6">
-            {% for message in messages %}
-                <div class="bg-blue-50 text-blue-800 text-sm px-4 py-2 rounded-md mb-2">{{ message }}</div>
-            {% endfor %}
-        </div>
-    {% endif %}
-
-    <main class="max-w-3xl mx-auto px-6 py-8">
-        {% block content %}{% endblock %}
-    </main>
-
+    {% if messages %}<div class="fixed right-4 top-20 z-30 w-full max-w-sm space-y-2">{% for message in messages %}<div class="card flex items-start gap-3 border-l-4 border-l-[#0b57d0] px-4 py-3 text-sm text-slate-700"><span class="mt-0.5 text-[#0b57d0]">✓</span>{{ message }}</div>{% endfor %}</div>{% endif %}
+    <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">{% block content %}{% endblock %}</main>
 </body>
 </html>

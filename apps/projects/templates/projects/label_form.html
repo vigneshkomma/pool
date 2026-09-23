@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}Edit Project Label{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-lg"><a href="{% url 'projects:detail' pk=project.pk %}" class="text-sm font-medium text-[#0b57d0] hover:underline">← Back to project</a><div class="card mt-4 p-6"><p class="eyebrow">Project label</p><h1 class="mt-1 text-2xl font-medium">Edit “{{ label.name }}”</h1><form method="post" class="mt-6 space-y-4">{% csrf_token %}{% for field in form %}<div><label class="mb-1.5 block text-sm font-medium text-slate-700">{{ field.label }}</label>{{ field }}{% if field.errors %}<p class="mt-1 text-xs text-red-600">{{ field.errors|join:", " }}</p>{% endif %}</div>{% endfor %}<div class="flex justify-end border-t border-slate-100 pt-5"><button type="submit" class="btn-primary">Save label</button></div></form></div></div>
+{% endblock %}

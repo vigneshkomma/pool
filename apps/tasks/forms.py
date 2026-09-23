@@ -7,9 +7,15 @@ class TaskForm(forms.ModelForm):
     both are set in the view from URL/request context, never user input.
     """
 
+    labels_text = forms.CharField(
+        required=False,
+        label='Labels',
+        help_text='Separate labels with commas, for example: bug, customer request',
+    )
+
     class Meta:
         model = Tasks
-        fields = ('title', 'description', 'status', 'priority', 'assignee', 'due_date', 'labels')
+        fields = ('title', 'description', 'status', 'priority', 'assignee', 'due_date')
         widgets = {
             'description': forms.Textarea(attrs={'rows':4}),
             'due_date': forms.DateInput(attrs={'type': 'date'})
@@ -21,6 +27,23 @@ class TaskForm(forms.ModelForm):
 
         if project is not None:
             self.fields['assignee'].queryset = project.members.all()
+        if self.instance.pk:
+            self.fields['labels_text'].initial = ', '.join(self.instance.labels.values_list('name', flat=True))
+
+    def save(self, commit=True):
+        task = super().save(commit=False)
+        label_names = {name.strip() for name in self.cleaned_data['labels_text'].split(',') if name.strip()}
+
+        def save_labels():
+            labels = [TaskLabel.objects.get_or_create(name=name)[0] for name in label_names]
+            task.labels.set(labels)
+
+        if commit:
+            task.save()
+            save_labels()
+        else:
+            self.save_m2m = save_labels
+        return task
 
 class SubtaskForm(forms.ModelForm):
     """
@@ -48,7 +71,6 @@ class TaskLabelForm(forms.ModelForm):
     class Meta:
         model = TaskLabel
         fields = ('name',)
-
 
 
 

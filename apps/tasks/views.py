@@ -2,11 +2,12 @@ from django.shortcuts import render
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_POST
 
 from apps.projects.models import Projects
-from .models import Tasks, Subtasks, Comment
-from .forms import TaskForm, SubtaskForm, CommentForm
+from .models import Tasks, Subtasks, Comment, TaskLabel
+from .forms import TaskForm, SubtaskForm, CommentForm, TaskLabelForm
 # Create your views here.
 
 
@@ -14,7 +15,14 @@ from .forms import TaskForm, SubtaskForm, CommentForm
 def task_list(request,project_pk):
     project = get_object_or_404(Projects, pk=project_pk, members=request.user)
     tasks = project.tasks.select_related('assignee', 'created_by').order_by('-created_at')
-    return render(request, 'tasks/task_list.html', {'project': project, 'tasks': tasks})
+    task_counts = {status: 0 for status in Tasks.Status.values}
+    for task in tasks:
+        task_counts[task.status] += 1
+    return render(request, 'tasks/task_list.html', {
+        'project': project,
+        'tasks': tasks,
+        'task_counts': task_counts,
+    })
 
 @login_required
 def task_detail(request, project_pk, pk):
@@ -58,6 +66,25 @@ def task_update(request ,project_pk, pk):
 
     return render(request, 'tasks/task_form.html', {'form': form, 'project': project})
 
+
+@login_required
+@require_POST
+def task_move(request, project_pk, pk):
+    """Persist a drag-and-drop move from the task board."""
+    project = get_object_or_404(Projects, pk=project_pk, members=request.user)
+    task = get_object_or_404(Tasks, pk=pk, project=project)
+    status = request.POST.get('status')
+    valid_statuses = {choice.value for choice in Tasks.Status}
+
+    if status not in valid_statuses:
+        return JsonResponse({'error': 'Invalid task status.'}, status=400)
+
+    if task.status != status:
+        task.status = status
+        task.save(update_fields=['status', 'updated_at'])
+
+    return JsonResponse({'id': task.pk, 'status': task.status})
+
 @login_required
 def task_delete(request, project_pk, pk):
     project = get_object_or_404(Projects, pk=project_pk, owner=request.user)
@@ -69,6 +96,44 @@ def task_delete(request, project_pk, pk):
         return redirect('tasks:list', project_pk=project.pk)
 
     return render(request, 'tasks/task_confirm_delete.html', {'task': task, 'project': project})
+
+
+@login_required
+def task_label_add(request, project_pk, pk):
+    project = get_object_or_404(Projects, pk=project_pk, members=request.user)
+    task = get_object_or_404(Tasks, pk=pk, project=project)
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if name:
+            label, _ = TaskLabel.objects.get_or_create(name=name)
+            task.labels.add(label)
+        else:
+            messages.error(request, 'Enter a label name.')
+    return redirect('tasks:detail', project_pk=project.pk, pk=task.pk)
+
+
+@login_required
+def task_label_edit(request, project_pk, pk, label_pk):
+    project = get_object_or_404(Projects, pk=project_pk, members=request.user)
+    task = get_object_or_404(Tasks, pk=pk, project=project)
+    label = get_object_or_404(task.labels, pk=label_pk)
+    form = TaskLabelForm(request.POST or None, instance=label)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Task label updated.')
+        return redirect('tasks:detail', project_pk=project.pk, pk=task.pk)
+    return render(request, 'tasks/label_form.html', {'form': form, 'project': project, 'task': task, 'label': label})
+
+
+@login_required
+@require_POST
+def task_label_remove(request, project_pk, pk, label_pk):
+    project = get_object_or_404(Projects, pk=project_pk, members=request.user)
+    task = get_object_or_404(Tasks, pk=pk, project=project)
+    label = get_object_or_404(task.labels, pk=label_pk)
+    task.labels.remove(label)
+    messages.success(request, 'Label removed from task.')
+    return redirect('tasks:detail', project_pk=project.pk, pk=task.pk)
 
 
 
@@ -120,9 +185,6 @@ def comment_create(request, task_pk):
             return render(request, 'tasks/_comment.html', {'comment': comment})
 
     return redirect('tasks:detail', project_pk=task.project.pk, pk=task.pk)
-
-
-
 
 
 

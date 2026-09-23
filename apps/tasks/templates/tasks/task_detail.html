@@ -1,54 +1,19 @@
 {% extends "base.html" %}
 {% block title %}{{ task.title }}{% endblock %}
 {% block content %}
-    <div class="mb-6">
-        <h1 class="text-2xl font-semibold">{{ task.title }}</h1>
-        <p class="text-gray-600 mt-1">{{ task.description }}</p>
-        <div class="flex gap-4 mt-3 text-sm text-gray-500 flex-wrap">
-            <span>Status: {{ task.get_status_display }}</span>
-            <span>Priority: {{ task.get_priority_display }}</span>
-            <span>Assignee: {{ task.assignee|default:"Unassigned" }}</span>
-            <span>Due: {{ task.due_date|default:"—" }}</span>
-        </div>
-    </div>
-
-    <div class="flex gap-3 mb-6">
-        <a href="{% url 'tasks:update' project_pk=project.pk pk=task.pk %}" class="text-sm text-blue-600 hover:underline">Edit</a>
+    <div class="mb-8 border-b border-slate-200 pb-6"><a href="{% url 'tasks:list' project_pk=project.pk %}" class="text-sm font-medium text-[#0b57d0] hover:underline">← Back to {{ project.name }}</a><div class="mt-4 flex flex-col justify-between gap-5 sm:flex-row"><div><p class="eyebrow">Task</p><h1 class="page-title mt-1">{{ task.title }}</h1><p class="mt-3 max-w-2xl text-slate-600">{{ task.description|default:"No additional details provided." }}</p><div class="mt-4 flex flex-wrap gap-2"><span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-[#0b57d0]">{{ task.get_status_display }}</span><span class="rounded-full {% if task.priority == 'URGENT' %}bg-red-50 text-red-700{% elif task.priority == 'HIGH' %}bg-amber-50 text-amber-700{% else %}bg-slate-100 text-slate-600{% endif %} px-3 py-1 text-xs font-medium">{{ task.get_priority_display }} priority</span><span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">{{ task.assignee|default:"Unassigned" }}</span>{% if task.due_date %}<span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">Due {{ task.due_date }}</span>{% endif %}</div></div><div class="flex h-fit gap-2"><a href="{% url 'tasks:update' project_pk=project.pk pk=task.pk %}" class="btn-secondary">Edit task</a>
         {% if project.owner == user %}
-            <a href="{% url 'tasks:delete' project_pk=project.pk pk=task.pk %}" class="text-sm text-red-600 hover:underline">Delete</a>
+            <a href="{% url 'tasks:delete' project_pk=project.pk pk=task.pk %}" class="rounded-full px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50">Delete</a>
         {% endif %}
-        <a href="{% url 'tasks:list' project_pk=project.pk %}" class="text-sm text-gray-500 hover:underline">Back to Tasks</a>
-    </div>
+    </div></div></div>
 
-    <h2 class="text-lg font-medium mb-2">Labels</h2>
-    <div class="flex flex-wrap gap-2 mb-6">
+    <div class="grid gap-6 lg:grid-cols-[1fr_.8fr]"><section><div class="mb-3"><p class="eyebrow">Progress</p><h2 class="mt-1 text-lg font-medium">Subtasks</h2></div><div id="subtask-list" class="card divide-y divide-slate-100 mb-3">
+        {% for subtask in task.subtasks.all %}{% include "tasks/_subtask_row.html" %}{% empty %}<p class="px-4 py-5 text-sm text-slate-400">No subtasks yet.</p>{% endfor %}
+    </div><div id="subtask-form-slot" class="mb-7"><button hx-get="{% url 'tasks:subtask_create' task_pk=task.pk %}" hx-target="#subtask-form-slot" hx-swap="innerHTML" class="text-sm font-medium text-[#0b57d0] hover:underline">+ Add subtask</button></div>
+    <div class="mb-3"><p class="eyebrow">Discussion</p><h2 class="mt-1 text-lg font-medium">Comments</h2></div><div id="comment-list" class="space-y-3 mb-4">{% for comment in task.comments.all %}{% include "tasks/_comment.html" %}{% empty %}<div class="text-sm text-slate-400">Start the conversation.</div>{% endfor %}</div><form hx-post="{% url 'tasks:comment_create' task_pk=task.pk %}" hx-target="#comment-list" hx-swap="beforeend" class="card p-4 space-y-2">{% csrf_token %}{{ comment_form.as_p }}<div class="flex justify-end"><button type="submit" class="btn-primary">Add comment</button></div></form></section>
+    <aside class="card h-fit p-5"><p class="eyebrow">Details</p><h2 class="mt-1 text-lg font-medium">Labels</h2><div class="mt-4 flex flex-wrap gap-2">
         {% for label in task.labels.all %}
-            <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">{{ label.name }}</span>
+            <div class="inline-flex items-center gap-1 rounded-full bg-[#f3e8fd] px-3 py-1 text-xs font-medium text-[#6d28a8]">{{ label.name }}<a href="{% url 'tasks:label_edit' project_pk=project.pk pk=task.pk label_pk=label.pk %}" class="ml-1 text-[#6d28a8] hover:text-[#4c1d95]" aria-label="Edit {{ label.name }}">✎</a><form method="post" action="{% url 'tasks:label_remove' project_pk=project.pk pk=task.pk label_pk=label.pk %}" class="inline">{% csrf_token %}<button type="submit" class="text-[#6d28a8] hover:text-red-600" aria-label="Remove {{ label.name }}">×</button></form></div>
         {% endfor %}
-    </div>
-
-    <h2 class="text-lg font-medium mb-2">Subtasks</h2>
-    <div id="subtask-list" class="bg-white border border-gray-200 rounded-lg divide-y divide-gray-100 mb-2">
-        {% for subtask in task.subtasks.all %}
-            {% include "tasks/_subtask_row.html" %}
-        {% endfor %}
-    </div>
-    <div id="subtask-form-slot" class="mb-6">
-        <button hx-get="{% url 'tasks:subtask_create' task_pk=task.pk %}" hx-target="#subtask-form-slot" hx-swap="innerHTML"
-                class="text-sm text-blue-600 hover:underline">
-            + Add Subtask
-        </button>
-    </div>
-
-    <h2 class="text-lg font-medium mb-2">Comments</h2>
-    <div id="comment-list" class="space-y-3 mb-4">
-        {% for comment in task.comments.all %}
-            {% include "tasks/_comment.html" %}
-        {% endfor %}
-    </div>
-    <form hx-post="{% url 'tasks:comment_create' task_pk=task.pk %}" hx-target="#comment-list" hx-swap="beforeend" class="space-y-2">
-        {% csrf_token %}
-        {{ comment_form.as_p }}
-        <button type="submit" class="bg-gray-900 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700">Add Comment</button>
-    </form>
+        {% if not task.labels.all %}<span class="text-sm text-slate-400">No labels yet</span>{% endif %}</div><form method="post" action="{% url 'tasks:label_add' project_pk=project.pk pk=task.pk %}" class="mt-5 flex gap-2 border-t border-slate-100 pt-4">{% csrf_token %}<label class="sr-only" for="task-label-name">New label</label><input id="task-label-name" name="name" type="text" maxlength="50" placeholder="New label" class="min-w-0"><button type="submit" class="btn-secondary shrink-0 px-3">Add</button></form></aside></div>
 {% endblock %}

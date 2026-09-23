@@ -1,9 +1,10 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
 
-from .models import Projects, ProjectMember
-from .forms import ProjectForm, ProjectMemberForm
+from .models import Projects, ProjectMember, ProjectLabel
+from .forms import ProjectForm, ProjectMemberForm, ProjectLabelForm
 # Create your views here.
 
 
@@ -62,6 +63,7 @@ def member_add(request, project_pk):
         if form.is_valid():
             member = form.save(commit=False)
             member.project = project
+            member.user = form.selected_user
             member.save()
             messages.success(request, f'{member.user} added to {project.name}')
             return redirect('projects:detail', pk=project_pk)
@@ -86,6 +88,39 @@ def member_remove(request, project_pk,member_pk):
     return render(request, 'projects/member_confirm_remove.html', {'member': member, 'project': project})
 
 
+@login_required
+def project_label_add(request, pk):
+    project = get_object_or_404(Projects, pk=pk, owner=request.user)
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if name:
+            label, _ = ProjectLabel.objects.get_or_create(name=name)
+            project.labels.add(label)
+        else:
+            messages.error(request, 'Enter a label name.')
+    return redirect('projects:detail', pk=project.pk)
+
+
+@login_required
+def project_label_edit(request, pk, label_pk):
+    project = get_object_or_404(Projects, pk=pk, owner=request.user)
+    label = get_object_or_404(project.labels, pk=label_pk)
+    form = ProjectLabelForm(request.POST or None, instance=label)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Project label updated.')
+        return redirect('projects:detail', pk=project.pk)
+    return render(request, 'projects/label_form.html', {'form': form, 'project': project, 'label': label})
+
+
+@login_required
+@require_POST
+def project_label_remove(request, pk, label_pk):
+    project = get_object_or_404(Projects, pk=pk, owner=request.user)
+    label = get_object_or_404(project.labels, pk=label_pk)
+    project.labels.remove(label)
+    messages.success(request, 'Label removed from project.')
+    return redirect('projects:detail', pk=project.pk)
 
 
 

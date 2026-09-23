@@ -1,0 +1,4 @@
+<a href="{% url 'tasks:detail' project_pk=project.pk pk=task.pk %}" class="task-card card block p-4 transition hover:shadow-md" draggable="true" data-task-id="{{ task.pk }}" data-move-url="{% url 'tasks:move' project_pk=project.pk pk=task.pk %}">
+    <div class="flex justify-between gap-3"><h3 class="font-medium text-slate-800">{{ task.title }}</h3><span class="h-2 w-2 shrink-0 rounded-full {% if task.priority == 'URGENT' %}bg-red-500{% elif task.priority == 'HIGH' %}bg-amber-500{% else %}bg-blue-400{% endif %}"></span></div>
+    <p class="mt-2 text-xs text-slate-500">{{ task.assignee|default:"Unassigned" }} · {{ task.due_date|default:"No due date" }}</p>
+</a>

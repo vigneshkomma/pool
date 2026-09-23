@@ -1,42 +1,83 @@
 {% extends "base.html" %}
 {% block title %}Tasks — {{ project.name }}{% endblock %}
+{% block extra_head %}
+<style>
+    .task-card[draggable="true"] { cursor: grab; }
+    .task-card.is-dragging { opacity: .45; cursor: grabbing; }
+    .board-lane.is-drag-over { outline: 2px dashed #0b57d0; outline-offset: -3px; background-color: #e8f0fe; }
+</style>
+{% endblock %}
 {% block content %}
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-semibold">Tasks — {{ project.name }}</h1>
-        <div class="flex gap-3">
-            <a href="{% url 'tasks:create' project_pk=project.pk %}" class="bg-gray-900 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700">+ New Task</a>
-            <a href="{% url 'projects:detail' pk=project.pk %}" class="text-sm text-gray-500 self-center hover:underline">Back to Project</a>
-        </div>
-    </div>
+    <div class="mb-8 flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between"><div><a href="{% url 'projects:detail' pk=project.pk %}" class="text-sm font-medium text-[#0b57d0] hover:underline">← {{ project.name }}</a><h1 class="page-title mt-2">Task board</h1><p class="mt-1 text-sm text-slate-500">See the flow of work at a glance.</p></div><a href="{% url 'tasks:create' project_pk=project.pk %}" class="btn-primary">+ New task</a></div>
 
     {% if tasks %}
-        <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
-                    <tr>
-                        <th class="text-left px-4 py-2">Title</th>
-                        <th class="text-left px-4 py-2">Status</th>
-                        <th class="text-left px-4 py-2">Priority</th>
-                        <th class="text-left px-4 py-2">Assignee</th>
-                        <th class="text-left px-4 py-2">Due</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    {% for task in tasks %}
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3">
-                                <a href="{% url 'tasks:detail' project_pk=project.pk pk=task.pk %}" class="text-blue-600 hover:underline">{{ task.title }}</a>
-                            </td>
-                            <td class="px-4 py-3">{{ task.get_status_display }}</td>
-                            <td class="px-4 py-3">{{ task.get_priority_display }}</td>
-                            <td class="px-4 py-3">{{ task.assignee|default:"Unassigned" }}</td>
-                            <td class="px-4 py-3">{{ task.due_date|default:"—" }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="grid gap-5 xl:grid-cols-3" id="task-board">
+            <section class="board-lane rounded-2xl bg-slate-100/70 p-3" data-status="TO_DO"><div class="mb-3 flex items-center justify-between px-2"><h2 class="text-sm font-semibold text-slate-700">To do</h2><span class="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500" data-task-count>{{ task_counts.TO_DO }}</span></div><div class="lane-cards min-h-20 space-y-3">{% for task in tasks %}{% if task.status == 'TO_DO' %}{% include 'tasks/_board_card.html' %}{% endif %}{% endfor %}</div></section>
+            <section class="board-lane rounded-2xl bg-blue-50/70 p-3" data-status="IN_PROGRESS"><div class="mb-3 flex items-center justify-between px-2"><h2 class="text-sm font-semibold text-[#0b57d0]">In progress</h2><span class="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500" data-task-count>{{ task_counts.IN_PROGRESS }}</span></div><div class="lane-cards min-h-20 space-y-3">{% for task in tasks %}{% if task.status == 'IN_PROGRESS' %}{% include 'tasks/_board_card.html' %}{% endif %}{% endfor %}</div></section>
+            <section class="board-lane rounded-2xl bg-emerald-50/70 p-3" data-status="DONE"><div class="mb-3 flex items-center justify-between px-2"><h2 class="text-sm font-semibold text-emerald-700">Done</h2><span class="rounded-full bg-white px-2 py-0.5 text-xs text-slate-500" data-task-count>{{ task_counts.DONE }}</span></div><div class="lane-cards min-h-20 space-y-3">{% for task in tasks %}{% if task.status == 'DONE' %}{% include 'tasks/_board_card.html' %}{% endif %}{% endfor %}</div></section>
         </div>
     {% else %}
-        <p class="text-gray-500">No tasks yet.</p>
-    {% endif %}
+        <div class="card px-8 py-14 text-center"><h2 class="text-xl font-medium">Your board is ready</h2><p class="mt-2 text-sm text-slate-500">Create a task to start turning your plan into progress.</p><a href="{% url 'tasks:create' project_pk=project.pk %}" class="btn-primary mt-6">Create a task</a></div>
+{% endif %}
+<p id="board-announcement" class="sr-only" aria-live="polite"></p>
+<script>
+(() => {
+    const board = document.querySelector('#task-board');
+    if (!board) return;
+    const lanes = [...board.querySelectorAll('.board-lane')];
+    let draggedCard = null;
+    const csrfToken = JSON.parse(document.body.getAttribute('hx-headers')).X-CSRFToken;
+
+    const updateCounts = () => lanes.forEach((lane) => {
+        lane.querySelector('[data-task-count]').textContent = lane.querySelectorAll('.task-card').length;
+    });
+    const clearDropTargets = () => lanes.forEach((lane) => lane.classList.remove('is-drag-over'));
+    const announce = (message) => { document.querySelector('#board-announcement').textContent = message; };
+
+    board.addEventListener('dragstart', (event) => {
+        const card = event.target.closest('.task-card');
+        if (!card) return;
+        draggedCard = card;
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', card.dataset.taskId);
+        requestAnimationFrame(() => card.classList.add('is-dragging'));
+    });
+    board.addEventListener('dragend', () => {
+        if (draggedCard) draggedCard.classList.remove('is-dragging');
+        draggedCard = null;
+        clearDropTargets();
+    });
+    lanes.forEach((lane) => {
+        lane.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            clearDropTargets();
+            lane.classList.add('is-drag-over');
+        });
+        lane.addEventListener('dragleave', (event) => {
+            if (!lane.contains(event.relatedTarget)) lane.classList.remove('is-drag-over');
+        });
+        lane.addEventListener('drop', async (event) => {
+            event.preventDefault();
+            clearDropTargets();
+            if (!draggedCard || lane.contains(draggedCard)) return;
+            const status = lane.dataset.status;
+            try {
+                const response = await fetch(draggedCard.dataset.moveUrl, {
+                    method: 'POST', credentials: 'same-origin',
+                    headers: {'X-CSRFToken': csrfToken, 'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: new URLSearchParams({status}),
+                });
+                if (!response.ok) throw new Error('Unable to save task status');
+                lane.querySelector('.lane-cards').append(draggedCard);
+                updateCounts();
+                announce(`Task moved to ${lane.querySelector('h2').textContent}.`);
+            } catch (error) {
+                announce('Could not move task. Please try again.');
+            }
+        });
+    });
+    updateCounts();
+})();
+</script>
 {% endblock %}
