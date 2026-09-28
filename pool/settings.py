@@ -34,14 +34,16 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'true').lower() in ('1', 'true', 'yes', '
 # A comma-separated override is useful for staging or an additional server IP.
 LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]']
 DEPLOYED_HOSTS = ['poolapp.duckdns.org']
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.environ.get(
-        'DJANGO_ALLOWED_HOSTS',
-        ','.join(LOCAL_HOSTS if DEBUG else DEPLOYED_HOSTS),
-    ).split(',')
-    if host.strip()
-]
+ALLOWED_HOSTS = os.getenv(
+    "DJANGO_ALLOWED_HOSTS",
+    "localhost,127.0.0.1,gamegearshop.duckdns.org",
+).split(",")
+
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    "https://gamegearshop.duckdns.org",
+).split(",")
+
 
 # Required for Django's CSRF protection when the HTTPS domain posts forms.
 CSRF_TRUSTED_ORIGINS = [
